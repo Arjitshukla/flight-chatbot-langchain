@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Chatbot</title>
+    <style>
+        #chatbox { margin-top: 20px; }
+        .user-message, .bot-message { margin: 10px; padding: 10px; }
+        .user-message { background-color: #f0f0f0; }
+        .bot-message { background-color: #d1f7d1; }
+    </style>
+</head>
+<body>
+    <h1>Welcome to the Flight Chatbot!</h1>
+    <form id="chat-form">
+        {% csrf_token %}
+        <input type="text" id="message" placeholder="Ask me about flights..." required>
+        <button type="submit">Send</button>
+    </form>
+
+    <div id="chatbox"></div>
+
+    <script>
+        function getCSRFToken() {
+            return document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1];
+        }
+        document.getElementById('chat-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const message = document.getElementById('message').value;
+            const chatbox = document.getElementById('chatbox');
+            chatbox.innerHTML += `<div class="user-message"><strong>User:</strong> ${message}</div>`;
+            document.getElementById('message').value = '';
+    
+            fetch("{% url 'chat_view' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": getCSRFToken()
+                },
+                body: new URLSearchParams({ message: message }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                let botResponse = data.response;
+                let botMessageDiv = document.createElement("div");
+                botMessageDiv.classList.add("bot-message");
+                botMessageDiv.innerHTML = `<strong>Bot:</strong> ${botResponse}`;
+                chatbox.appendChild(botMessageDiv);
+            });
+        });
+    </script>
+    
+</body>
+</html>
